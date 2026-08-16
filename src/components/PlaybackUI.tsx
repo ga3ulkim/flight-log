@@ -24,6 +24,10 @@ export default function PlaybackUI({
   onStop,
   onCycleSpeed,
 }: PlaybackUIProps) {
+  const transferActive = play.hold > 0 && nextFlight !== undefined;
+  const transferLabel = transferActive
+    ? `${transferMode === 'sea' ? '해상 이동' : '지상 이동'} → ${nextFlight.fa}`
+    : null;
   const transferProgress =
     play.hold > 0 && play.holdTotal > 0 ? 1 - play.hold / play.holdTotal : play.t;
   const overallProgress =
@@ -40,7 +44,7 @@ export default function PlaybackUI({
       {currentFlight && (
         <div
           className="flc-playback-console"
-          aria-label={`현재 여정 ${Math.min(play.idx + 1, sequenceLength)}번째`}
+          aria-label={`현재 여정 ${Math.min(play.idx + 1, sequenceLength)}번째${transferLabel ? `, ${transferLabel}` : ''}`}
         >
           <div className="flc-playback-kicker">
             <span>
@@ -49,22 +53,17 @@ export default function PlaybackUI({
             </span>
             <span>{play.on ? 'IN FLIGHT' : 'PAUSED'}</span>
           </div>
-          <div className="flc-playback-route">
-            {currentFlight.fa} → {currentFlight.ta}
+          <div
+            className={`flc-playback-route${transferActive ? ' flc-playback-transfer' : ''}`}
+            data-transfer-mode={transferActive ? (transferMode ?? 'land') : undefined}
+          >
+            {transferLabel ?? `${currentFlight.fa} → ${currentFlight.ta}`}
           </div>
-          {(currentFlight.al || currentFlight.fn || currentFlight.ac) && (
+          {!transferActive && (currentFlight.al || currentFlight.fn || currentFlight.ac) && (
             <div className="flc-playback-meta">
               {currentFlight.al || '항공사 미상'}
               {currentFlight.fn ? ` · ${currentFlight.fn}` : ''}
               {currentFlight.ac ? ` · ${currentFlight.ac}` : ''}
-            </div>
-          )}
-          {play.hold > 0 && nextFlight && (
-            <div
-              className="flc-playback-transfer"
-              data-transfer-mode={transferMode ?? 'land'}
-            >
-              {transferMode === 'sea' ? '해상 이동' : '지상 이동'} → {nextFlight.fa}
             </div>
           )}
           <div

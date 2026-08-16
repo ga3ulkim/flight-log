@@ -781,10 +781,8 @@
   line-height: 1.5;
 }
 
-.flc-playback-transfer {
-  margin-top: 4px;
+.flc-playback-route.flc-playback-transfer {
   color: #75581a;
-  font-size: 11px;
 }
 
 .flc-progress-track {
