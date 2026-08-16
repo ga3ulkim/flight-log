@@ -6,8 +6,10 @@ import {
   chronologicalFlights,
   flightDuration,
   groundTransferDuration,
+  journeyDuration,
   playedRouteKeys,
 } from './playback';
+import { haversine, knownAirport } from './geography';
 
 const START = { idx: 0, t: 0, hold: 0, holdTotal: 0 } as const;
 
@@ -86,9 +88,14 @@ describe('playback advancement', () => {
     });
   });
 
-  it('retains the reference duration clamps', () => {
-    expect(groundTransferDuration(0)).toBe(500);
-    expect(groundTransferDuration(10_000)).toBe(3000);
+  it('uses the same distance pacing and clamps for flights and transfers', () => {
+    const distance = haversine(knownAirport('ICN'), knownAirport('CJU'));
+    expect(flightDuration(makeFlight({ fa: 'ICN', ta: 'CJU' }))).toBe(
+      journeyDuration(distance),
+    );
+    expect(groundTransferDuration(distance)).toBe(journeyDuration(distance));
+    expect(groundTransferDuration(0)).toBe(1300);
+    expect(groundTransferDuration(20_000)).toBe(4800);
     expect(flightDuration(makeFlight({ fa: 'ICN', ta: 'CJU' }))).toBeGreaterThanOrEqual(1300);
     expect(flightDuration(makeFlight({ fa: 'ICN', ta: 'JFK' }))).toBeLessThanOrEqual(4800);
   });

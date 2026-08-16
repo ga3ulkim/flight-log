@@ -1,4 +1,4 @@
-import type { PointerEventHandler, RefObject } from 'react';
+import { useMemo, type PointerEventHandler, type RefObject } from 'react';
 import { LAND, type LandPoint } from '../data/landGeometry';
 import { routeKey } from '../lib/analytics';
 import {
@@ -10,6 +10,12 @@ import {
   projectLatitude,
   projectLongitude,
 } from '../lib/geography';
+import {
+  geographicPoint,
+  segmentTransferByLand,
+  transferModeAt,
+  type TransferMode,
+} from '../lib/landSeaTransfer';
 import type {
   Camera,
   Flight,
@@ -90,6 +96,24 @@ export default function FlightMap({
   const viewY = clamp(camera.cy - viewHeight / 2, 0, MAP_HEIGHT - viewHeight);
   const inverseScale = 1 / camera.s;
   const showAllLabels = camera.s >= 3;
+  const nextFlight = sequence[play.idx + 1];
+  const transferSegments = useMemo(() => {
+    if (!currentFlight || !nextFlight || currentFlight.ta === nextFlight.fa) return null;
+    const from = AIRPORTS[currentFlight.ta];
+    const to = AIRPORTS[nextFlight.fa];
+    if (!from || !to) return null;
+    return segmentTransferByLand(geographicPoint(from), geographicPoint(to));
+  }, [currentFlight, nextFlight]);
+  const transferProgress =
+    play.hold > 0 && play.holdTotal > 0
+      ? clamp(1 - play.hold / play.holdTotal, 0, 1)
+      : 0;
+  const transferMode: TransferMode | null =
+    play.hold > 0
+      ? transferSegments
+        ? transferModeAt(transferSegments, transferProgress)
+        : 'land'
+      : null;
 
   return (
     <div className="flc-map-card">
@@ -310,9 +334,10 @@ export default function FlightMap({
               })}
               <AircraftMarker
                 currentFlight={currentFlight}
-                nextFlight={sequence[play.idx + 1]}
+                nextFlight={nextFlight}
                 play={play}
                 inverseCameraScale={inverseScale}
+                transferMode={transferMode}
               />
             </g>
           ))}
@@ -322,7 +347,8 @@ export default function FlightMap({
           play={play}
           active={playActive}
           currentFlight={currentFlight}
-          nextFlight={sequence[play.idx + 1]}
+          nextFlight={nextFlight}
+          transferMode={transferMode}
           sequenceLength={sequence.length}
           onToggle={onTogglePlayback}
           onStop={onStopPlayback}

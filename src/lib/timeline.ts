@@ -7,6 +7,11 @@ export interface FlightTimelineGroup {
   flights: Flight[];
 }
 
+export interface FlightTimelineDisclosure {
+  groups: FlightTimelineGroup[];
+  canToggle: boolean;
+}
+
 const UNKNOWN_YEAR_KEY = 'unknown';
 
 function comparableDateKey(flight: Flight): string {
@@ -52,6 +57,30 @@ export function groupFlightsForTimeline(
     label: year == null ? '날짜 미상' : String(year),
     flights: groupFlights,
   }));
+}
+
+/**
+ * Limit the archive presentation without removing or re-sorting source data.
+ * The collapsed preview is the first item from the existing newest-first
+ * grouping, while expanded mode returns every matching record.
+ */
+export function timelineDisclosure(
+  flights: readonly Flight[],
+  expanded: boolean,
+): FlightTimelineDisclosure {
+  const groups = groupFlightsForTimeline(flights);
+  if (expanded || flights.length <= 1 || groups.length === 0) {
+    return { groups, canToggle: flights.length > 1 };
+  }
+
+  const firstGroup = groups[0];
+  const firstFlight = firstGroup.flights[0];
+  return {
+    groups: firstFlight
+      ? [{ ...firstGroup, flights: [firstFlight] }]
+      : [],
+    canToggle: true,
+  };
 }
 
 const MONTH_LABELS = [

@@ -1,6 +1,6 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { Flight } from '../types';
-import { groupFlightsForTimeline, timelineDateLabel } from '../lib/timeline';
+import { timelineDateLabel, timelineDisclosure } from '../lib/timeline';
 
 interface FlightTimelineProps {
   flights: readonly Flight[];
@@ -12,7 +12,9 @@ function joinedCities(flight: Flight): string {
 
 export default function FlightTimeline({ flights }: FlightTimelineProps) {
   const headingId = useId();
-  const groups = groupFlightsForTimeline(flights);
+  const contentId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const { groups, canToggle } = timelineDisclosure(flights, expanded);
 
   return (
     <section className="flc-timeline" aria-labelledby={headingId}>
@@ -27,69 +29,87 @@ export default function FlightTimeline({ flights }: FlightTimelineProps) {
       </header>
 
       {groups.length === 0 ? (
-        <div className="flc-timeline-empty" role="status">
+        <div className="flc-timeline-empty" id={contentId} role="status">
           현재 필터에 해당하는 비행 기록이 없습니다.
         </div>
       ) : (
-        <div className="flc-timeline-groups">
-          {groups.map((group) => {
-            const groupHeadingId = `${headingId}-${group.key}`;
-            return (
-              <section
-                className="flc-timeline-year"
-                aria-labelledby={groupHeadingId}
-                key={group.key}
+        <>
+          <div className="flc-timeline-groups" id={contentId}>
+            {groups.map((group) => {
+              const groupHeadingId = `${headingId}-${group.key}`;
+              return (
+                <section
+                  className="flc-timeline-year"
+                  aria-labelledby={groupHeadingId}
+                  key={group.key}
+                >
+                  <header className="flc-timeline-year-heading">
+                    <h3 id={groupHeadingId}>{group.label}</h3>
+                    <span>
+                      {group.flights.length}{' '}
+                      {group.flights.length === 1 ? 'FLIGHT' : 'FLIGHTS'}
+                    </span>
+                  </header>
+
+                  <ol className="flc-timeline-list">
+                    {group.flights.map((flight) => {
+                      const date = timelineDateLabel(flight);
+                      const cities = joinedCities(flight);
+                      return (
+                        <li
+                          className="flc-timeline-item"
+                          data-flight-type={flight.type === '국제선' ? 'international' : 'domestic'}
+                          key={flight.id}
+                        >
+                          <article>
+                            <div className="flc-timeline-date">
+                              {date.dateTime ? (
+                                <time dateTime={date.dateTime} aria-label={date.accessible}>
+                                  {date.primary}
+                                </time>
+                              ) : (
+                                <span aria-label={date.accessible}>{date.primary}</span>
+                              )}
+                            </div>
+
+                            <div className="flc-timeline-flight">
+                              <h4 aria-label={`${flight.fa}에서 ${flight.ta}까지`}>
+                                <span aria-hidden="true">{flight.fa}</span>
+                                <span aria-hidden="true">→</span>
+                                <span aria-hidden="true">{flight.ta}</span>
+                              </h4>
+                              {cities && <p className="flc-timeline-cities">{cities}</p>}
+                              {flight.al && <p className="flc-timeline-airline">{flight.al}</p>}
+                            </div>
+
+                            <div className="flc-timeline-meta">
+                              <span className="flc-timeline-type">{flight.type}</span>
+                              {flight.fn && <span>{flight.fn}</span>}
+                              {flight.ac && <span>{flight.ac}</span>}
+                            </div>
+                          </article>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </section>
+              );
+            })}
+          </div>
+          {canToggle && (
+            <div className="flc-timeline-toggle-row">
+              <button
+                className="flc-btn flc-timeline-toggle"
+                type="button"
+                aria-controls={contentId}
+                aria-expanded={expanded}
+                onClick={() => setExpanded((current) => !current)}
               >
-                <header className="flc-timeline-year-heading">
-                  <h3 id={groupHeadingId}>{group.label}</h3>
-                  <span>{group.flights.length} FLIGHTS</span>
-                </header>
-
-                <ol className="flc-timeline-list">
-                  {group.flights.map((flight) => {
-                    const date = timelineDateLabel(flight);
-                    const cities = joinedCities(flight);
-                    return (
-                      <li
-                        className="flc-timeline-item"
-                        data-flight-type={flight.type === '국제선' ? 'international' : 'domestic'}
-                        key={flight.id}
-                      >
-                        <article>
-                          <div className="flc-timeline-date">
-                            {date.dateTime ? (
-                              <time dateTime={date.dateTime} aria-label={date.accessible}>
-                                {date.primary}
-                              </time>
-                            ) : (
-                              <span aria-label={date.accessible}>{date.primary}</span>
-                            )}
-                          </div>
-
-                          <div className="flc-timeline-flight">
-                            <h4 aria-label={`${flight.fa}에서 ${flight.ta}까지`}>
-                              <span aria-hidden="true">{flight.fa}</span>
-                              <span aria-hidden="true">→</span>
-                              <span aria-hidden="true">{flight.ta}</span>
-                            </h4>
-                            {cities && <p className="flc-timeline-cities">{cities}</p>}
-                            {flight.al && <p className="flc-timeline-airline">{flight.al}</p>}
-                          </div>
-
-                          <div className="flc-timeline-meta">
-                            <span className="flc-timeline-type">{flight.type}</span>
-                            {flight.fn && <span>{flight.fn}</span>}
-                            {flight.ac && <span>{flight.ac}</span>}
-                          </div>
-                        </article>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </section>
-            );
-          })}
-        </div>
+                {expanded ? '접기' : '펼치기'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

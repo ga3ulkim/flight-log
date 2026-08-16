@@ -7,6 +7,7 @@ import {
   quadraticPoint,
   wrapTowards,
 } from '../lib/geography';
+import type { TransferMode } from '../lib/landSeaTransfer';
 import { COLORS } from './theme';
 
 export type PlaneCategory =
@@ -156,11 +157,42 @@ function BusIcon() {
   );
 }
 
+function FerryIcon() {
+  return (
+    <>
+      <path
+        d="M-10,1.1 L9.4,1.1 L6.7,4.4 L-6.8,4.4 Q-8.7,3.4 -10,1.1 Z"
+        fill={COLORS.ink}
+        stroke={COLORS.card}
+        strokeWidth="0.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M-6.8,1.1 L-5.3,-3.1 L3.6,-3.1 L7.1,1.1 Z"
+        fill={COLORS.ink}
+        stroke={COLORS.card}
+        strokeWidth="0.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M-3.8,-3.1 L-2.8,-5.2 L0.3,-5.2 L1.2,-3.1 Z"
+        fill={COLORS.ink}
+        stroke={COLORS.card}
+        strokeWidth="0.6"
+      />
+      <rect x="-4.5" y="-2.1" width="2.5" height="1.5" rx="0.35" fill={COLORS.card} />
+      <rect x="-1.2" y="-2.1" width="2.5" height="1.5" rx="0.35" fill={COLORS.card} />
+      <rect x="2.1" y="-2.1" width="2.3" height="1.5" rx="0.35" fill={COLORS.card} />
+    </>
+  );
+}
+
 interface AircraftMarkerProps {
   currentFlight: Flight | null;
   nextFlight: Flight | undefined;
   play: PlaybackState;
   inverseCameraScale: number;
+  transferMode: TransferMode | null;
 }
 
 export default function AircraftMarker({
@@ -168,6 +200,7 @@ export default function AircraftMarker({
   nextFlight,
   play,
   inverseCameraScale,
+  transferMode,
 }: AircraftMarkerProps) {
   if (!currentFlight) return null;
 
@@ -181,15 +214,19 @@ export default function AircraftMarker({
     const transferProgress = clamp(1 - play.hold / (play.holdTotal || 1100), 0, 1);
     const x = fromX + (toX - fromX) * transferProgress;
     const y = fromY + (toY - fromY) * transferProgress;
-    const scale = 1.5 * inverseCameraScale;
+    const scale = 1.65 * inverseCameraScale;
     const direction = toX - fromX < 0 ? -1 : 1;
+    const mode = transferMode ?? 'land';
     return (
       <g
         data-vehicle="ground-transfer"
+        data-transfer-mode={mode}
+        data-vehicle-kind={mode === 'sea' ? 'ferry' : 'bus'}
         transform={`translate(${x},${y}) scale(${scale * direction},${scale})`}
         pointerEvents="none"
+        aria-hidden="true"
       >
-        <BusIcon />
+        {mode === 'sea' ? <FerryIcon /> : <BusIcon />}
       </g>
     );
   }

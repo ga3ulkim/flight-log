@@ -3,8 +3,11 @@ import {
   MAP_WIDTH,
   arcGeometry,
   haversine,
+  mapSpanCameraScale,
   nearestWorldOffset,
   normalizeWorldX,
+  knownAirport,
+  projectLatitude,
   projectLongitude,
   quadraticPoint,
   routeCameraScale,
@@ -49,5 +52,28 @@ describe('geographic helpers', () => {
     const shortScale = routeCameraScale(arcGeometry('ICN', 'CJU'));
     const longScale = routeCameraScale(arcGeometry('ICN', 'JFK'));
     expect(shortScale).toBeGreaterThan(longScale);
+  });
+
+  it('uses the exact flight-reference scale formula for a straight transfer span', () => {
+    const geometry = arcGeometry('GDX', 'ANC');
+    expect(
+      mapSpanCameraScale(geometry.x1, geometry.y1, geometry.x2, geometry.y2),
+    ).toBe(routeCameraScale(geometry));
+  });
+
+  it('zooms a short transfer closer than a long wrapped transfer', () => {
+    const transferScale = (fromCode: string, toCode: string) => {
+      const [fromLatitude, fromLongitude] = knownAirport(fromCode);
+      const [toLatitude, toLongitude] = knownAirport(toCode);
+      const fromX = projectLongitude(fromLongitude);
+      const fromY = projectLatitude(fromLatitude);
+      const [toX, toY] = wrapTowards(fromX, toLatitude, toLongitude);
+      return mapSpanCameraScale(fromX, fromY, toX, toY);
+    };
+
+    const shortScale = transferScale('NRT', 'HND');
+    const longDatelineScale = transferScale('ANC', 'GDX');
+    expect(shortScale).toBeGreaterThan(longDatelineScale);
+    expect(longDatelineScale).toBeLessThan(18);
   });
 });

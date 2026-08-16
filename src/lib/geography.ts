@@ -23,7 +23,6 @@ export const MAP_HEIGHT = Math.round(
 );
 export const CAMERA_SCALE_MIN = 1;
 export const CAMERA_SCALE_MAX = 30;
-export const BUS_CAMERA_SCALE = 18;
 
 export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
@@ -166,8 +165,14 @@ export function nearestWorldOffset(rawX: number, referenceX: number): number {
   return bestOffset;
 }
 
-export function routeCameraScale(geometry: ArcGeometry): number {
-  const length = Math.hypot(geometry.x2 - geometry.x1, geometry.y2 - geometry.y1);
+/** Use the validated flight-route scale model for any complete map-space leg. */
+export function mapSpanCameraScale(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): number {
+  const length = Math.hypot(x2 - x1, y2 - y1);
   const shortRouteSoftener = 56;
   return (
     clamp(
@@ -177,4 +182,8 @@ export function routeCameraScale(geometry: ArcGeometry): number {
       11,
     ) * 1.3
   );
+}
+
+export function routeCameraScale(geometry: ArcGeometry): number {
+  return mapSpanCameraScale(geometry.x1, geometry.y1, geometry.x2, geometry.y2);
 }

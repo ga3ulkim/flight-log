@@ -26,13 +26,18 @@ export function areSequentialFlightsConnected(current: Flight, next: Flight): bo
   return current.ta === next.fa;
 }
 
+/** Shared symbolic pacing for flights and disconnected airport transfers. */
+export function journeyDuration(distanceKm: number): number {
+  return clamp(1000 + Math.max(0, distanceKm) / 3, 1300, 4800);
+}
+
 export function flightDuration(flight: Flight): number {
   const distance = haversine(knownAirport(flight.fa), knownAirport(flight.ta));
-  return clamp(1000 + distance / 3, 1300, 4800);
+  return journeyDuration(distance);
 }
 
 export function groundTransferDuration(distanceKm: number): number {
-  return clamp(300 + distanceKm * 1.1, 500, 3000);
+  return journeyDuration(distanceKm);
 }
 
 /** Advance at most one transition, matching the original per-frame state machine. */

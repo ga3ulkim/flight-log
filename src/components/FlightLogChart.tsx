@@ -19,7 +19,6 @@ import {
 } from '../lib/analytics';
 import {
   AIRPORTS,
-  BUS_CAMERA_SCALE as BUS_ZOOM,
   CAMERA_SCALE_MAX as S_MAX,
   CAMERA_SCALE_MIN as S_MIN,
   MAP_HEIGHT as H,
@@ -28,6 +27,7 @@ import {
   clamp,
   haversine,
   knownAirport,
+  mapSpanCameraScale as spanScale,
   nearestWorldOffset,
   normalizeWorldX,
   quadraticPoint as quadPoint,
@@ -304,7 +304,7 @@ export default function FlightLogChart() {
       const { done } = advanced;
       playRef.current = { idx, t, hold, holdTotal };
       setPlay((p) => (done ? { ...p, on: false, idx, t, hold: 0, holdTotal: 0 } : { ...p, idx, t, hold, holdTotal }));
-      /* 카메라 팔로우 — 손 조작 중/직후 2초는 양보. 대기 중엔 버스의 현재 위치를 그대로 추적 */
+      /* 카메라 팔로우 — 손 조작 중/직후 2초는 양보. 이동 중엔 현재 위치를 그대로 추적 */
       if (dragRef.current.ptrs.size === 0 && now >= followPause.current) {
         let rawTx = null, fy = 0, sT = 2, trackKey = null;
         if (hold > 0 && seq[idx] && seq[idx + 1]) {
@@ -313,8 +313,9 @@ export default function FlightLogChart() {
           const nextAirport = AIRPORTS[nextF.fa];
           const [bx, by] = nextAirport ? wrapTowards(ax, nextAirport[0], nextAirport[1]) : [ax, ay];
           const hT = clamp(1 - hold / (holdTotal || 1), 0, 1);
-          rawTx = ax + (bx - ax) * hT; fy = ay + (by - ay) * hT; /* 버스의 실제 이동 위치 */
-          sT = BUS_ZOOM; /* 버스는 간격 거리와 무관하게 항상 전용 최대 배율로 (LGW-JFK처럼 멀어도 크게) */
+          rawTx = ax + (bx - ax) * hT; fy = ay + (by - ay) * hT;
+          /* 전체 환승 구간 길이로 한 번 정한 비행 노선 기준 배율 — 해안 통과 중에도 불변 */
+          sT = spanScale(ax, ay, bx, by);
           trackKey = 'h' + idx;
         } else if (seq[idx]) {
           const g = arcGeom(seq[idx].fa, seq[idx].ta);
@@ -330,12 +331,12 @@ export default function FlightLogChart() {
             worldOffRef.current = nearestWorldOffset(rawTx, camRef.current.cx);
           }
           const targetX = rawTx + worldOffRef.current; /* 구간 내내 같은 오프셋 고정 → 프레임 간 재판단으로 인한 떨림 제거 */
-          const isBusSeg = hold > 0;
+          const isTransferSeg = hold > 0;
           if (isNewSegment) {
             /* 새 구간 시작: 위치는 항상 즉시 스냅(어긋남·떨림 방지).
-               배율은 버스만 즉시 스냅(전용 최대 배율), 비행은 이전 배율에서 서서히 근접 시작 */
+               환승 배율은 전체 직선 구간 기준값으로 한 번 맞추고, 비행은 이전 배율에서 서서히 근접 시작 */
             setCam((c) => {
-              const ns = isBusSeg ? sT : c.s;
+              const ns = isTransferSeg ? sT : c.s;
               const nvh = H / ns;
               return { s: ns, cx: targetX, cy: clamp(fy, nvh / 2, H - nvh / 2) };
             });
@@ -625,8 +626,8 @@ export default function FlightLogChart() {
             <div className="flc-eyebrow">PERSONAL FLIGHT LOG</div>
             <nav className="flc-header-nav" aria-label="페이지 섹션">
               <a className="flc-text-link" href="#world-map">WORLD MAP</a>
+              <a className="flc-text-link" href="#insights">RANKINGS</a>
               <a className="flc-text-link" href="#flight-archive">ARCHIVE</a>
-              <a className="flc-text-link" href="#insights">INSIGHTS</a>
             </nav>
             <button
               className="flc-btn"
@@ -759,19 +760,17 @@ export default function FlightLogChart() {
 
           <p className="flc-map-note">
             PLAY MY JOURNEY 재생 시 카메라는 노선 길이에 맞춰 배율을 조절하고 비행기를
-            따라갑니다. 지도를 직접 움직이면 2초 뒤 자동 추적을 다시 시작합니다.
+            따라갑니다. 지도를 직접 움직이면 2초 뒤 자동 추적을 다시 시작합니다. 연결되지
+            않은 구간은 공항 사이의 직선과 단순화된 해안선을 바탕으로 지상·해상 이동을
+            구분한 시각적 표현이며, 실제 교통수단이나 이동 경로를 뜻하지 않습니다.
           </p>
         </section>
-
-        <div className="flc-section" id="flight-archive">
-          <FlightTimeline flights={filtered} />
-        </div>
 
         <section className="flc-section" id="insights" aria-labelledby="insights-heading">
           <header className="flc-section-heading">
             <div>
-              <div className="flc-eyebrow">TRAVEL INSIGHTS</div>
-              <h2 id="insights-heading">여행의 패턴</h2>
+              <div className="flc-eyebrow">RANKINGS</div>
+              <h2 id="insights-heading">순위</h2>
             </div>
             <p>
               국가·도시·공항·운항사 순위는 기존 집계 방식 그대로, 현재 선택한 기록을
@@ -786,6 +785,10 @@ export default function FlightLogChart() {
             live={liveDerived != null}
           />
         </section>
+
+        <div className="flc-section" id="flight-archive">
+          <FlightTimeline flights={filtered} />
+        </div>
 
         <footer className="flc-footer">
           <div>

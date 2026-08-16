@@ -1,10 +1,12 @@
 import type { Flight, PlaybackState } from '../types';
+import type { TransferMode } from '../lib/landSeaTransfer';
 
 interface PlaybackUIProps {
   play: PlaybackState;
   active: boolean;
   currentFlight: Flight | null;
   nextFlight: Flight | undefined;
+  transferMode: TransferMode | null;
   sequenceLength: number;
   onToggle: () => void;
   onStop: () => void;
@@ -16,6 +18,7 @@ export default function PlaybackUI({
   active,
   currentFlight,
   nextFlight,
+  transferMode,
   sequenceLength,
   onToggle,
   onStop,
@@ -57,7 +60,12 @@ export default function PlaybackUI({
             </div>
           )}
           {play.hold > 0 && nextFlight && (
-            <div className="flc-playback-transfer">지상 이동 → {nextFlight.fa} 재출발</div>
+            <div
+              className="flc-playback-transfer"
+              data-transfer-mode={transferMode ?? 'land'}
+            >
+              {transferMode === 'sea' ? '해상 이동' : '지상 이동'} → {nextFlight.fa}
+            </div>
           )}
           <div
             className="flc-progress-track"

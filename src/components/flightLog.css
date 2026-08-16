@@ -1027,6 +1027,16 @@
   font-size: 13px;
 }
 
+.flc-timeline-toggle-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.flc-timeline-toggle {
+  min-width: 140px;
+}
+
 /* Insights -------------------------------------------------- */
 
 .flc-rankings {
@@ -1392,6 +1402,10 @@
 
   .flc-timeline-meta {
     gap: 4px 8px;
+  }
+
+  .flc-timeline-toggle {
+    width: 100%;
   }
 
   .flc-rankings {

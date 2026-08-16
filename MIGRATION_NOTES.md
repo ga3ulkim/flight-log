@@ -52,7 +52,7 @@ For the first migration, static airport/land data and safe pure helpers may move
 | `dragRef` | Active pointer map, pan/pinch gesture baseline, and click-suppression `moved` flag |
 | `followPause` | Timestamp until which manual map input wins over automatic following |
 | `playRef` | Mutable mirror of playback progress for the rAF loop |
-| `trackKeyRef` | Identifies the current flight/ground segment; world-copy selection is recomputed only when it changes |
+| `trackKeyRef` | Identifies the current flight/transfer segment; world-copy selection is recomputed only when it changes |
 | `worldOffRef` | Fixed `-W`, `0`, or `+W` offset for the whole current segment, preventing frame-to-frame wrap jitter |
 
 The state/ref duplication is deliberate. Replacing the refs with ordinary state reads inside long-lived handlers or the rAF callback risks stale values, extra effect restarts, and visible camera jitter.
@@ -107,6 +107,9 @@ During playback, live analytics rebuild the same maps/sets over `seq[0..idx]`. T
 
 - The map uses a custom equirectangular-like SVG projection: width `W = 1000`, latitude range 76 to -58, and pixels per degree `W / 360`.
 - `LAND` is simplified polygon/ring geometry converted once to SVG paths. It must retain `fillRule="evenodd"`, coastline stroke, and the current visual palette.
+- `src/lib/landSeaTransfer.ts` applies those same ring semantics to disconnected transfers: even-odd parity within each top-level polygon, then a union of polygons. Exact coastline points count as land; wrapped query longitudes are normalized locally.
+- Transfer sampling adapts to both angular span (about 0.25° per sample) and distance (about 20 km per sample), clamped to 16–1,024 intervals. Mode changes are refined with 12 bisection steps.
+- Land/sea fragments shorter than 1.25% of a transfer are merged with adjacent modes. Under the 1.3–4.8 second shared duration envelope this suppresses roughly 16–60 ms visual noise from the deliberately simplified coastline.
 - Directional route arcs are cached by `origin>destination`.
 - Before projection, destination longitude is shifted by ±360 when needed so each route follows the shorter wrapped longitudinal span.
 - Each route is a quadratic Bézier. The control point uses a perpendicular offset capped between 6 and 70 map units and bends generally poleward according to midpoint hemisphere.
@@ -135,24 +138,25 @@ Map regressions to watch: adding pointer capture, attaching passive wheel handle
 
 - Sequence contains only filtered flights with two known, distinct airports.
 - It is sorted lexically by parsed `sortKey`, then by original row `id` for stable same-date ordering.
-- A flight duration is `clamp(1000 + km / 3, 1300, 4800)` milliseconds before speed multiplication.
+- Flights and disconnected transfers share `clamp(1000 + km / 3, 1300, 4800)` milliseconds before speed multiplication. Equal map-leg distances therefore receive equal symbolic animation time.
 - Speed is applied to rAF delta time and cycles 1× → 2× → 4× → 1×.
 - Play pauses without changing progress. Stop returns to inactive progress but preserves speed. Replaying a completed sequence starts from the beginning.
 
 ### Connected versus disconnected flights
 
 - If the next departure airport equals the current arrival airport, playback advances immediately to the next curve.
-- Otherwise, the current flight holds at `t = 1` while a bus moves in a straight line from the arrival airport to the next departure airport.
-- Ground-transfer duration is distance-dependent: `clamp(300 + km * 1.1, 500, 3000)` milliseconds.
+- Otherwise, the current flight holds at `t = 1` while a transfer marker moves in a straight line from the arrival airport to the next departure airport.
 - The transfer uses `wrapTowards` so the next airport is represented by the world copy nearest the prior arrival.
-- The bus uses a side silhouette, flips horizontally by travel direction instead of rotating, leaves no transfer path behind, and uses a fixed camera target scale of 18.
+- The marker uses a bus silhouette over land and a ferry silhouette over sea. Both are side views that flip horizontally by travel direction, and no transfer path is left behind.
+- This is a visualization convention, not transport history: mode is inferred along the straight airport-to-airport connection from the bundled simplified coastline. It does not claim the user literally travelled by bus or ferry or followed a real road/sea route.
 
 ### Automatic camera following and anti-jitter behavior
 
 - New playback starts by snapping to the first departure with route-dependent scale.
 - Flight camera target scale uses projected chord length and a softened denominator, then clamps and applies the current 1.3 multiplier. Short routes zoom closer; long routes stay wider.
-- On each new flight/ground segment, the nearest of `-W`, `0`, and `+W` is chosen relative to the current camera center. That offset remains fixed for the entire segment.
-- New segments snap position immediately. Ground segments also snap scale immediately to 18; flight scale eases toward its route target.
+- On each new flight/transfer segment, the nearest of `-W`, `0`, and `+W` is chosen relative to the current camera center. That offset remains fixed for the entire segment.
+- A disconnected transfer uses the same projected-span camera-scale formula as a flight, computed once from the full straight connection. Short transfers zoom closer, long transfers stay wider, and coastline mode changes do not alter the target scale or tracking key.
+- New segments snap position immediately. Transfer segments snap to their single route-derived scale; flight scale eases toward its route target.
 - Continuing frames ease scale by 0.5 and position by 0.14. Tiny unchanged movements return the prior camera object.
 - Active pointers and the follow-pause timestamp temporarily override auto-follow.
 
