@@ -1,4 +1,6 @@
+import { useId, useState } from 'react';
 import type { RankingEntry, StatTab } from '../types';
+import { rankingDisclosure } from '../lib/rankings';
 import { Chip, Stat } from './uiPrimitives';
 
 export interface SummaryMetrics {
@@ -66,6 +68,10 @@ export function RankingsPanel({
   activeNames,
   live,
 }: RankingsPanelProps) {
+  const contentId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const disclosure = rankingDisclosure(rankings, expanded);
+
   return (
     <div className="flc-rankings">
       <div className="flc-rankings-header">
@@ -88,8 +94,8 @@ export function RankingsPanel({
           표시할 데이터가 없어요. 필터를 바꿔보세요.
         </div>
       ) : (
-        <ol className="flc-ranking-list">
-          {rankings.map(([name, count], index) => {
+        <ol className="flc-ranking-list" id={contentId}>
+          {disclosure.entries.map(([name, count], index) => {
             const max = rankings[0][1];
             const isGrowing = activeNames?.has(name);
             return (
@@ -110,6 +116,23 @@ export function RankingsPanel({
             );
           })}
         </ol>
+      )}
+      {disclosure.canToggle && (
+        <div className="flc-ranking-disclosure">
+          <span aria-live="polite">
+            {disclosure.entries.length.toLocaleString()} /{' '}
+            {disclosure.total.toLocaleString()}개 표시
+          </span>
+          <button
+            className="flc-btn flc-ranking-toggle"
+            type="button"
+            aria-controls={contentId}
+            aria-expanded={expanded}
+            onClick={() => setExpanded((current) => !current)}
+          >
+            {expanded ? '상위 10개만 보기' : '전체 순위 보기'}
+          </button>
+        </div>
       )}
       <p className="flc-ranking-note">
         {tab === '공항' || tab === '도시'

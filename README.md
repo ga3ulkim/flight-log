@@ -146,9 +146,3 @@ npm ci
 Vite는 GitHub Actions의 `GITHUB_REPOSITORY`에서 저장소 이름을 읽습니다. 일반 프로젝트 저장소는 자동으로 `/<repository>/`를 사용하고, `<username>.github.io` 저장소는 `/`를 사용합니다. 로컬 개발과 일반 로컬 빌드는 계속 `/`에서 동작하므로 사용자 이름을 설정 파일에 넣을 필요가 없습니다.
 
 실제 배포 전 GitHub 저장소의 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 선택하세요. 이 작업 공간을 준비한 과정에서는 원격 저장소 생성, GitHub 인증, 푸시 또는 외부 게시를 수행하지 않았습니다.
-
-## Project notes
-
-- [MIGRATION_NOTES.md](MIGRATION_NOTES.md) — parser, geometry, camera, playback invariants
-- [PHASE3_REPORT.md](PHASE3_REPORT.md) — product redesign and responsive/browser validation
-- `FINAL_REPORT.md` — release-candidate validation and remaining owner steps

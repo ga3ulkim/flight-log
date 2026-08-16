@@ -188,8 +188,7 @@ export function rankingData(source: RankingSource, tab: StatTab): RankingEntry[]
             );
 
   return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 12);
+    .sort((a, b) => b[1] - a[1]);
 }
 
 export function activeRankingNames(

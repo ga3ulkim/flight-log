@@ -712,7 +712,12 @@ export default function FlightLogChart() {
           />
         </section>
 
-        <section className="flc-section" id="world-map" aria-labelledby="map-heading">
+        <div className="flc-map-rankings-grid">
+        <section
+          className="flc-section flc-map-column"
+          id="world-map"
+          aria-labelledby="map-heading"
+        >
           <header className="flc-section-heading">
             <div>
               <div className="flc-eyebrow">WORLD FLIGHT MAP</div>
@@ -766,7 +771,11 @@ export default function FlightLogChart() {
           </p>
         </section>
 
-        <section className="flc-section" id="insights" aria-labelledby="insights-heading">
+        <section
+          className="flc-section flc-rankings-column"
+          id="insights"
+          aria-labelledby="insights-heading"
+        >
           <header className="flc-section-heading">
             <div>
               <div className="flc-eyebrow">RANKINGS</div>
@@ -785,6 +794,7 @@ export default function FlightLogChart() {
             live={liveDerived != null}
           />
         </section>
+        </div>
 
         <div className="flc-section" id="flight-archive">
           <FlightTimeline flights={filtered} />

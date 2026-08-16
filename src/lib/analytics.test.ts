@@ -63,6 +63,28 @@ describe('flight analytics', () => {
     ]);
   });
 
+  it('returns the complete sorted ranking so presentation can own the Top 10 limit', () => {
+    const airlineCounts = new Map(
+      Array.from({ length: 13 }, (_, index) => [
+        `Synthetic Carrier ${index + 1}`,
+        13 - index,
+      ]),
+    );
+    const rankings = rankingData(
+      {
+        cCount: new Map<string, number>(),
+        cities: new Map<string, number>(),
+        apUse: new Map<string, { n: number; city: string }>(),
+        alCount: airlineCounts,
+      },
+      '항공사',
+    );
+
+    expect(rankings).toHaveLength(13);
+    expect(rankings[0]).toEqual(['Synthetic Carrier 1', 13]);
+    expect(rankings[12]).toEqual(['Synthetic Carrier 13', 1]);
+  });
+
   it('aggregates an undirected route while retaining its first direction', () => {
     const route = aggregateFlights(flights).routes.get(routeKey('ICN', 'CJU'));
     expect(route).toMatchObject({ a: 'ICN', b: 'CJU', n: 2, intl: false });
