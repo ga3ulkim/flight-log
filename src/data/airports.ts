@@ -1,8 +1,7 @@
-/**
- * Airport coordinate lookup extracted from the reference implementation.
- *
- * Tuple order is [latitude, longitude].
- */
+import { MANUAL_AIRPORT_OVERRIDES } from './airportOverrides';
+import { GENERATED_AIRPORT_COORDINATES } from './generated/ourAirports';
+
+/** Tuple order is [latitude, longitude]. */
 export type AirportCoordinate = readonly [
   latitude: number,
   longitude: number,
@@ -12,27 +11,36 @@ export type AirportCoordinatesByCode = Readonly<
   Record<string, AirportCoordinate>
 >;
 
-export const AP = {
-  PUS:[35.18,128.94], GMP:[37.56,126.79], ICN:[37.47,126.44], CJU:[33.51,126.49], TAE:[35.90,128.66], CJJ:[36.72,127.50], MWX:[34.99,126.38], RSU:[34.84,127.62], USN:[35.59,129.35],
-  NRT:[35.77,140.39], HND:[35.55,139.78], KIX:[34.43,135.24], ITM:[34.79,135.44], CTS:[42.78,141.69], FUK:[33.59,130.45], NGO:[34.86,136.81], OKA:[26.20,127.65], SDJ:[38.14,140.92], HIJ:[34.44,132.92], KMJ:[32.84,130.86], KOJ:[31.80,130.72],
-  PEK:[40.08,116.58], PKX:[39.51,116.41], PVG:[31.14,121.81], SHA:[31.20,121.34], CAN:[23.39,113.30], SZX:[22.64,113.81], TAO:[36.36,120.09], DLC:[38.97,121.54], HKG:[22.31,113.91], MFM:[22.15,113.59], TPE:[25.08,121.23], TSA:[25.07,121.55],
-  SIN:[1.36,103.99], BKK:[13.69,100.75], DMK:[13.91,100.60], KUL:[2.75,101.71], CGK:[-6.13,106.66], DPS:[-8.75,115.17], MNL:[14.51,121.02], SGN:[10.82,106.65], HAN:[21.22,105.81], DAD:[16.04,108.20], PNH:[11.55,104.84], REP:[13.41,103.81], SAI:[13.37,104.22], HKT:[8.11,98.31], CNX:[18.77,98.96], USM:[9.55,100.06],
-  DEL:[28.56,77.10], BOM:[19.09,72.87], CMB:[7.17,79.88], DXB:[25.25,55.36], DOH:[25.27,51.61], AUH:[24.44,54.65], JED:[21.68,39.16], RUH:[24.96,46.70], TLV:[32.01,34.89], IKA:[35.42,51.15],
-  WAW:[52.17,20.97], VNO:[54.64,25.29], KUN:[54.96,24.08], RIX:[56.92,23.97], TLL:[59.41,24.83], HEL:[60.32,24.96], ARN:[59.65,17.92], OSL:[60.19,11.10], CPH:[55.62,12.66], KEF:[63.98,-22.61],
-  LHR:[51.47,-0.45], LGW:[51.15,-0.19], LTN:[51.87,-0.37], STN:[51.89,0.24], MAN:[53.35,-2.28], EDI:[55.95,-3.37], GLA:[55.87,-4.43], DUB:[53.42,-6.27],
-  CDG:[49.01,2.55], ORY:[48.72,2.38], NCE:[43.66,7.22], LYS:[45.73,5.08], MRS:[43.44,5.22], TLS:[43.63,1.37], BOD:[44.83,-0.72], NTE:[47.16,-1.61],
-  AMS:[52.31,4.76], EIN:[51.45,5.37], BRU:[50.90,4.48], CRL:[50.46,4.45],
-  FRA:[50.03,8.57], MUC:[48.35,11.79], BER:[52.37,13.50], DUS:[51.29,6.77], CGN:[50.87,7.14], HAM:[53.63,9.99], STR:[48.69,9.22],
-  ZRH:[47.46,8.55], GVA:[46.24,6.11], BSL:[47.60,7.52], VIE:[48.11,16.57], PRG:[50.10,14.26], BUD:[47.44,19.26], KRK:[50.08,19.78], GDN:[54.38,18.47], BTS:[48.17,17.21],
-  FCO:[41.80,12.24], MXP:[45.63,8.72], LIN:[45.45,9.28], BGY:[45.67,9.70], VCE:[45.50,12.35], NAP:[40.88,14.29], TRN:[45.20,7.65],
-  MAD:[40.47,-3.57], BCN:[41.30,2.08], PMI:[39.55,2.74], AGP:[36.68,-4.50], VLC:[39.49,-0.48], SVQ:[37.42,-5.90], LIS:[38.77,-9.13], OPO:[41.24,-8.68],
-  ATH:[37.94,23.94], SKG:[40.52,22.97], HER:[35.34,25.18], MLA:[35.86,14.48], IST:[41.26,28.74], SAW:[40.90,29.31], OTP:[44.57,26.09], SOF:[42.70,23.41], BEG:[44.82,20.31], ZAG:[45.74,16.07], LJU:[46.22,14.46], SVO:[55.97,37.41],
-  CAI:[30.11,31.41], CMN:[33.37,-7.59], JNB:[-26.14,28.25], CPT:[-33.97,18.60], NBO:[-1.32,36.93], ADD:[8.98,38.80],
-  JFK:[40.64,-73.78], LGA:[40.78,-73.87], EWR:[40.69,-74.17], BOS:[42.36,-71.01], DCA:[38.85,-77.04], IAD:[38.95,-77.46], BUF:[42.94,-78.73],
-  MCO:[28.43,-81.31], MIA:[25.79,-80.29], ATL:[33.64,-84.43], ORD:[41.98,-87.90], DFW:[32.90,-97.04], IAH:[29.98,-95.34], LAS:[36.08,-115.15],
-  LAX:[33.94,-118.41], SAN:[32.73,-117.19], SFO:[37.62,-122.38], SEA:[47.45,-122.31], YVR:[49.19,-123.18], YYZ:[43.68,-79.63], YUL:[45.47,-73.74], MEX:[19.44,-99.07], CUN:[21.04,-86.87], HNL:[21.32,-157.92],
-  GRU:[-23.43,-46.47], EZE:[-34.82,-58.54], SCL:[-33.39,-70.79], BOG:[4.70,-74.14], LIM:[-12.02,-77.11],
-  SYD:[-33.95,151.18], MEL:[-37.67,144.84], BNE:[-27.38,153.12], AKL:[-37.01,174.79], GUM:[13.48,144.80],
-} as const satisfies AirportCoordinatesByCode;
+export type AirportCoordinateLookup = Readonly<
+  Record<string, AirportCoordinate | undefined>
+>;
+
+/** Resolve one code without allocating a merged index; overrides always win. */
+export function resolveAirportCoordinate(
+  code: string,
+  generated: AirportCoordinateLookup = GENERATED_AIRPORT_COORDINATES,
+  overrides: AirportCoordinateLookup = MANUAL_AIRPORT_OVERRIDES,
+): AirportCoordinate | undefined {
+  return overrides[code] ?? generated[code];
+}
+
+/** Build the compatibility lookup consumed by the validated map/playback code. */
+export function mergeAirportCoordinates(
+  generated: AirportCoordinatesByCode,
+  overrides: AirportCoordinatesByCode,
+): AirportCoordinatesByCode {
+  return Object.freeze(
+    Object.assign(Object.create(null) as Record<string, AirportCoordinate>, generated, overrides),
+  );
+}
+
+/**
+ * Local-only coordinate index. Normal application use performs no airport API
+ * requests: manual corrections take precedence over the generated snapshot.
+ */
+export const AP = mergeAirportCoordinates(
+  GENERATED_AIRPORT_COORDINATES,
+  MANUAL_AIRPORT_OVERRIDES,
+);
 
 export type AirportCode = keyof typeof AP;

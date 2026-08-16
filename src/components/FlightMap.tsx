@@ -281,7 +281,7 @@ export default function FlightMap({
                   (currentFlight.fa === code || currentFlight.ta === code);
                 const showLabel = showAllLabels || topLabels.includes(code);
                 return (
-                  <g key={code}>
+                  <g key={code} data-airport-code={code}>
                     <circle
                       cx={projectLongitude(longitude)}
                       cy={projectLatitude(latitude)}

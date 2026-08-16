@@ -149,6 +149,13 @@
   text-wrap: balance;
 }
 
+.flc-landing-title-line {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
 .flc-landing-statement {
   max-width: 600px;
   margin: 22px 0 0;

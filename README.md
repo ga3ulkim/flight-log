@@ -94,6 +94,39 @@ npm run preview
 
 좌표가 등록되지 않은 IATA 코드는 기록, 편수, 공항/도시/국가 순위에는 남지만 지도, 거리 계산, 여정 재생에서는 제외됩니다.
 
+## Airport coordinate data
+
+Airport coordinates are looked up locally from a compact generated snapshot of
+the [OurAirports public-domain airport data](https://ourairports.com/data/).
+The public application retains only IATA code, latitude, and longitude; it does
+not query an airport API with codes from an uploaded flight file.
+
+To refresh the committed snapshot manually:
+
+```bash
+npm run update-airports
+npm run lint
+npm run test
+npm run typecheck
+npm run build
+```
+
+The updater validates the upstream columns and coordinate ranges, filters to
+three-letter IATA records, and reports duplicate-code decisions. A genuinely
+ambiguous duplicate fails until its OurAirports `ident` is reviewed and added
+to `scripts/airport-duplicate-resolutions.mjs`. The small manual override layer
+in `src/data/airportOverrides.ts` takes precedence over generated data; it is
+reserved for reviewed historical or corrected coordinates.
+
+`.github/workflows/update-airports.yml` runs at 04:17 UTC on the first day of
+each month. It does nothing when coordinates are unchanged. When they change,
+it updates an automation branch and opens a pull request rather than writing
+directly to `main`; merging that reviewed PR triggers the normal Pages workflow.
+The schedule can be changed by editing its `cron` expression, or disabled from
+the repository's Actions page (or by removing the `schedule` block). Repository
+settings must allow GitHub Actions to create pull requests for the automatic PR
+step; manual updates remain available otherwise.
+
 ## GitHub Pages
 
 `.github/workflows/deploy.yml`은 `main` 푸시마다 다음 순서로 실행되도록 준비되어 있습니다.

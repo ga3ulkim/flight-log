@@ -185,6 +185,7 @@ export default function AircraftMarker({
     const direction = toX - fromX < 0 ? -1 : 1;
     return (
       <g
+        data-vehicle="ground-transfer"
         transform={`translate(${x},${y}) scale(${scale * direction},${scale})`}
         pointerEvents="none"
       >
@@ -200,6 +201,7 @@ export default function AircraftMarker({
   const scale = 1.7 * AIRCRAFT_SCALE[category] * inverseCameraScale;
   return (
     <g
+      data-vehicle="aircraft"
       transform={`translate(${x},${y}) rotate(${angle}) scale(${scale})`}
       pointerEvents="none"
     >

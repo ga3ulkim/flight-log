@@ -94,6 +94,15 @@ Parser regressions to watch: losing CP949 fallback, scanning fewer header rows, 
 
 During playback, live analytics rebuild the same maps/sets over `seq[0..idx]`. The current flight counts immediately for flight/type/country/city/airport/airline measures, while its distance is multiplied by current `t`. Ranking bars associated with the current flight are highlighted.
 
+## Airport coordinate source
+
+- `src/data/generated/ourAirports.ts` is a committed, deterministic compact snapshot generated from the public-domain OurAirports `airports.csv`. Only IATA code, latitude, and longitude enter the browser bundle.
+- Normal upload, analytics, map, and playback code perform local object lookups only. They never send IATA values from a user's file to OurAirports or any other airport API.
+- `npm run update-airports` downloads the fixed public dataset URL, validates its required schema, accepts only three-letter IATA codes with finite in-range coordinates, sorts output by IATA, and writes only when the coordinate content changes.
+- Duplicate IATA rows with identical coordinates are equivalent. Otherwise, a unique scheduled-service/type priority may resolve the code and is reported. A tied geographic ambiguity stops generation until a reviewed upstream `ident` is added to `scripts/airport-duplicate-resolutions.mjs`.
+- `src/data/airportOverrides.ts` is a deliberately small reviewed layer with precedence over generated data. REP is retained there for legitimate historical itineraries because the retired airport no longer has an IATA entry in the current upstream snapshot.
+- A truly unresolved code retains the existing partial-results behavior: it remains in records and rankings but is excluded from geometry, distance, and playback.
+
 ## Map projection and route geometry
 
 - The map uses a custom equirectangular-like SVG projection: width `W = 1000`, latitude range 76 to -58, and pixels per degree `W / 360`.
@@ -116,7 +125,7 @@ During playback, live analytics rebuild the same maps/sets over `seq[0..idx]`. T
 - Pointer down does not use pointer capture. Instead, it installs window-level move/up/cancel listeners. This is a deliberate fix that allows route click propagation to continue working.
 - A single pointer pans from the gesture-start camera. More than five total pixels of movement marks the gesture as moved and suppresses route/background clicks.
 - Two pointers establish a pinch distance, midpoint, start camera, and map-space focus. Pinch updates both zoom and midpoint translation. Returning to one pointer establishes a fresh pan baseline.
-- Any pointer/wheel interaction postpones automatic follow. The code currently uses a 2,000 ms timestamp even though one help string says three seconds; actual behavior should be preserved unless intentionally fixed in a later phase.
+- Any pointer/wheel interaction postpones automatic follow for 2,000 ms. The help copy now states the same two-second behavior.
 
 Map regressions to watch: adding pointer capture, attaching passive wheel handlers, clamping longitude, omitting repeated world groups, normalizing follow-camera `cx` every frame, changing client-to-map math, or failing to suppress clicks after a drag.
 

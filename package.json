@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "update-airports": "node scripts/update-airports.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

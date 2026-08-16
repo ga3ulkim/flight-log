@@ -499,7 +499,9 @@ export default function FlightLogChart() {
           <section className="flc-landing-copy" aria-labelledby="landing-title">
             <div className="flc-eyebrow">PERSONAL FLIGHT LOG</div>
             <h1 className="flc-landing-title" id="landing-title">
-              비행 기록 차트
+              <span className="flc-landing-title-line">비행 기록</span>
+              {' '}
+              <span className="flc-landing-title-line">차트</span>
             </h1>
             <p className="flc-landing-statement">
               나의 여정을,
